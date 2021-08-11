@@ -1,7 +1,7 @@
 let currentPage = 1;
 const baseURL = "http://localhost:3000/monsters/";
 
-const fetchService = (type = "get") => {
+const fetchService = (type = "get", pdata) => {
   const monsterContainer = document.getElementById("monster-container");
   const clearTags = () => {
     while (monsterContainer.firstChild) {
@@ -24,6 +24,7 @@ const fetchService = (type = "get") => {
       monsterContainer.append(div);
     }
   };
+
   if (type === "get") {
     return fetch(baseURL + `?_limit=5&_page=${currentPage}`)
       .then((resp) => resp.json())
@@ -34,6 +35,31 @@ const fetchService = (type = "get") => {
       .catch((e) => {
         console.log(e);
       });
+  } else if (type === "post") {
+    const confObj = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: JSON.stringify(pdata)
+    };
+    console.log("pdata: ",pdata);
+    console.log("confObj:  ", confObj);
+    return fetch(baseURL, confObj)
+      .then((resp) => resp.json())
+      .then((obj) => {
+        console.log("data added: ", obj);
+      })
+      .catch((e) => {
+        console.log(e);
+      });
+  }
+};
+
+const setAttributes = (el, attrs) => {
+  for (let key in attrs) {
+    el.setAttribute(key, attrs[key]);
   }
 };
 
@@ -41,21 +67,50 @@ const fetchService = (type = "get") => {
   document.addEventListener("DOMContentLoaded", () => {
     const back = document.getElementById("back");
     const forward = document.getElementById("forward");
-    fetchService();
+    const createMonster = document.getElementById("create-monster");
+    const form = document.createElement("form");
+    form.setAttribute("id", "monster-form");
+    const inputName = document.createElement("input");
+    setAttributes(inputName, {
+      id: "name",
+      placeholder: "name...",
+    });
+    const inputAge = document.createElement("input");
+    setAttributes(inputAge, {
+      id: "age",
+      placeholder: "age ...",
+    });
+    const inputDesc = document.createElement("input");
+    setAttributes(inputDesc, {
+      id: "description",
+      placeholder: "description...",
+    });
+    const createBtn = document.createElement("button");
+    createBtn.innerText = "Create";
+    form.append(inputName, inputAge, inputDesc, createBtn);
+    createMonster.appendChild(form);
+    fetchService("get"); //first default page
+    createBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      const data = {
+        name: `${inputName.value}`,
+        age: parseFloat(inputAge.value),
+        description: `${inputDesc.value}`,
+      };
+      fetchService("post", data);
+    });
     back.addEventListener("click", () => {
       currentPage--;
-      console.log("back: ", currentPage);
       if (currentPage < 1) {
         currentPage = 1;
         alert("No more monster !!!");
       } else {
-        fetchService();
+        fetchService("get");
       }
     });
     forward.addEventListener("click", () => {
       currentPage++;
-      console.log("forward: ", currentPage);
-      fetchService();
+      fetchService("get");
     });
   });
 })();
